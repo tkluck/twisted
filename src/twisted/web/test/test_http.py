@@ -3106,9 +3106,9 @@ class RequestTests(unittest.TestCase, ResponseTestMixin):
         request = http.Request(DummyChannel(peer=client))
         self.assertIs(request.getClientAddress(), client)
 
-    def test_getRequestHostnameWithHostHeader(self):
+    def test_getRequestHostWithHostHeader(self):
         """
-        L{http.Request.getRequestHostname} returns the host component
+        L{http.Request.getRequestHost} returns the host component
         of the C{Host} header's value when it is present, even when
         the underlying transport does not have a hostname.
         """
@@ -3121,18 +3121,18 @@ class RequestTests(unittest.TestCase, ResponseTestMixin):
             host = hostAndMaybePort[0]
             request = http.Request(DummyChannel(host=hostAddress), False)
             request.requestHeaders.setRawHeaders(b"host", [b":".join(hostAndMaybePort)])
-            self.assertEqual(request.getRequestHostname(), host)
+            self.assertEqual(request.getRequestHost(), host)
 
-    def test_getRequestHostnameWithoutHostHeader(self):
+    def test_getRequestHostWithoutHostHeader(self):
         """
-        L{http.Request.getRequestHostname} returns the transport's
+        L{http.Request.getRequestHost} returns the transport's
         host address in the absence of a C{Host} header.
         """
         host = "10.0.0.1"
         transport = DummyChannel(host=address.IPv4Address("TCP", host, 1234))
         request = http.Request(transport, False)
         self.assertIsNone(request.getHeader(b"host"))
-        self.assertEqual(request.getRequestHostname(), host.encode('ascii'))
+        self.assertEqual(request.getRequestHost(), host.encode('ascii'))
 
 class MultilineHeadersTests(unittest.TestCase):
     """
@@ -3391,6 +3391,29 @@ class DeprecatedRequestAttributesTests(unittest.TestCase):
                 "message": (
                     "twisted.web.http.Request.noLongerQueued was deprecated "
                     "in Twisted 16.3.0"
+                ),
+            },
+            sub(["category", "message"], warnings[0]),
+        )
+
+    def test_getRequestHostname(self):
+        """
+        L{Request.getRequestHostname} is deprecated in favor of
+        L{Request.getRequestHost}.
+        """
+        request = http.Request(DummyChannel())
+        request.getRequestHostname()
+
+        warnings = self.flushWarnings(offendingFunctions=[self.test_getRequestHostname])
+
+        self.assertEqual(1, len(warnings))
+        self.assertEqual(
+            {
+                "category": DeprecationWarning,
+                "message": (
+                    "twisted.web.http.Request.getRequestHostname was "
+                    "deprecated in Twisted NEXT; please use "
+                    "getRequestHost instead"
                 ),
             },
             sub(["category", "message"], warnings[0]),
